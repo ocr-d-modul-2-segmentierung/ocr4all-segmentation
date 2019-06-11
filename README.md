@@ -1,0 +1,2 @@
+# ocr4all-segmentation
+
