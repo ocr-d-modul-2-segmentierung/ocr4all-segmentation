@@ -1,0 +1,3 @@
+[submodule "page-content"]
+	path = subprojects/page_content
+	url = git@gitlab2.informatik.uni-wuerzburg.de:alh75dg/page-content.git
