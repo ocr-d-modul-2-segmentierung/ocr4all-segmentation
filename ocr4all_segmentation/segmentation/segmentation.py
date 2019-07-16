@@ -19,6 +19,7 @@ from ocr4all_segmentation.segmentation.util import pairwise
 from definitions import default_content_model
 from matplotlib.path import Path
 from shapely import geometry
+from shapely.affinity import scale
 
 
 class Segmentator:
@@ -40,10 +41,15 @@ class Segmentator:
         if bounding_box_path is not None:
             mask = generate_content_mask(np.array(bounding_box_path), _image.shape)
             _image[mask < 1] = 255
-        _rescaled_image = ImageRescaler().rescale(_image)
+        _rescaled_image, rescale_factor = ImageRescaler().rescale(_image)
+        _np_image = _rescaled_image.astype(np.bool)
+        avg_cc_height, median_cc_height = compute_avg_cc_height(_np_image)
+        if self.settings.remove_big_contours:
+            _rescaled_image = preprocess(_rescaled_image, avg_cc_height, self.settings.big_contour_height_ratio)
         inverted = (_rescaled_image == 0)
         cleansed_image = np.invert(remove_small_objects(inverted,
                                                         min_size=self.settings.min_size_objects, in_place=True))
+
         if self.settings.debug_page_content_mask:
             f, ax = plt.subplots(1, 2, True, True)
             ax[0].imshow(mask)
@@ -74,20 +80,12 @@ class Segmentator:
         regions = []
         for image in sub_images_horizontal:
             bbox = image.getbbox()
-            avg_cc_height = compute_avg_cc_height(image.sub_image)
+            avg_cc_height, median_cc_height = compute_avg_cc_height(image.sub_image)
             bbox_height = bbox[0][1] - bbox[0][0]
-            if image.sub_image.shape[0] < self.settings.min_image_height or \
-                    bbox_height / self.settings.min_cc_factor_size < avg_cc_height:
-                regions.append(geometry.Polygon([[bbox[1][0], bbox[0][0] + image.path[0]],
-                                                 [bbox[1][1], bbox[0][0] + image.path[0]],
-                                                 [bbox[1][1], bbox[0][1] + image.path[0]],
-                                                 [bbox[1][0], bbox[0][1] + image.path[0]]]))
-                continue
-            _x = get_bp_distribution(image.sub_image[bbox[0][0]:bbox[0][1],
-                                                                        bbox[1][0]: bbox[1][1]], 0)
-            x_cuts = self.find_cut_points(_x, image.sub_image[bbox[0][0]:bbox[0][1],
-                                                                        bbox[1][0]: bbox[1][1]])
-
+            print('boxheight {} avg_cc_height {} median_cc_height {}'.format(bbox_height, avg_cc_height,
+                                                                             median_cc_height))
+            _x = get_bp_distribution(image.sub_image[bbox[0][0]:bbox[0][1], bbox[1][0]: bbox[1][1]], 0)
+            x_cuts = self.find_cut_points(_x, image.sub_image[bbox[0][0]:bbox[0][1], bbox[1][0]: bbox[1][1]])
             if self.settings.validate_vertical_lines and x_cuts :
                 new_x_cuts = []
                 for x_ind, x in enumerate(x_cuts):
@@ -96,21 +94,31 @@ class Segmentator:
                         continue
                     line_length = x.get_line_length_y()
                     if line_length < 500:
-                        if line_length < 200:
+                        if 0.5 < bbox_height / avg_cc_height <= 5:
+                            blackness = get_blackness_of_vertical_line(x, image.sub_image[bbox[0][0]:bbox[0][1],
+                                                                          bbox[1][0]: bbox[1][1]],
+                                                                       self.settings.validate_vertical_lines_width
+                                                                       * 10)
+                        elif 5 < bbox_height / avg_cc_height < 25:
                             blackness = get_blackness_of_vertical_line(x, image.sub_image[bbox[0][0]:bbox[0][1],
                                                                             bbox[1][0]: bbox[1][1]],
-                                                                       self.settings.validate_vertical_lines_width)
-                        else:
-                            blackness = 1
-                            blackness = get_blackness_of_vertical_line(x, image.sub_image[bbox[0][0]:bbox[0][1],
-                                                                            bbox[1][0]: bbox[1][1]],
-                                                                       self.settings.validate_vertical_lines_width // 2,
-                                                                       vote=True)
+                                                                       int(median_cc_height / 4),
+                                                                       vote=True, debug=False)
 
-                        if blackness == 1:
+                        else:
+                            blackness = get_blackness_of_vertical_line(x, image.sub_image[bbox[0][0]:bbox[0][1],
+                                                                            bbox[1][0]: bbox[1][1]],
+                                                                       self.settings.validate_vertical_lines_width - 1,
+                                                                       vote=True, debug=False)
+
+                        if blackness >= self.settings.validate_vertical_line_blakness:
                             new_x_cuts.append(x)
                     else:
-                        new_x_cuts.append(x)
+                        blackness = get_blackness_of_vertical_line(x, image.sub_image[bbox[0][0]:bbox[0][1],
+                                                                        bbox[1][0]: bbox[1][1]],
+                                                                   0, vote=True, debug=False)
+                        if blackness >= self.settings.validate_vertical_line_blakness:
+                            new_x_cuts.append(x)
 
                 x_cuts = new_x_cuts
 
@@ -121,6 +129,22 @@ class Segmentator:
                     listline1 = list(zip(*line1.get_xy(x_offset=bbox[1][0], y_offset=bbox[0][0] + image.path[0])))
                     listline2 = list(zip(*line2.get_xy(x_offset=bbox[1][0], y_offset=bbox[0][0] + image.path[0])))
                     path = listline1 + listline2[::-1]
+
+                    # Todo optimize, just a hack to test
+                    cleansed_image_cp = cleansed_image.copy()
+                    mask = generate_content_mask(path, cleansed_image.shape)
+                    cleansed_image_cp[mask < 1] = 255
+                    _segment = segment(cleansed_image_cp, path)
+
+                    (y1b, y2b), (x1b, x2b) = _segment.getbbox()
+                    xmin, xmax = min(np.asarray(listline1)[:, 0]), max(np.asarray(listline2)[:, 0])
+                    ymin, ymax = min(np.asarray(listline2)[:, 1]), max(np.asarray(listline2)[:, 1])
+
+                    list1x = list(np.asarray(listline1)[:, 0] + (x1b - xmin))
+                    list1y = list(np.asarray(listline1)[:, 1])
+                    list2x = list(np.asarray(listline2)[:, 0] + (x2b - xmax))
+                    list2y = list(np.asarray(listline2)[:, 1])
+                    path = list(zip(list1x, list1y)) + list(zip(list2x, list2y))[::-1]
                     regions.append(geometry.Polygon(path))
             else:
                 regions.append(geometry.Polygon([[bbox[1][0], bbox[0][0] + image.path[0]],
@@ -128,13 +152,34 @@ class Segmentator:
                                                  [bbox[1][1], bbox[0][1] + image.path[0]],
                                                  [bbox[1][0], bbox[0][1] + image.path[0]]]))
 
-        if self.settings.debug:
-            plt.imshow(cleansed_image)
-            for polygon in regions:
-                x, y = polygon.exterior.xy
-                plt.plot(x, y)
-            plt.show()
-        return regions
+        if self.settings.resize_regions_to_original_size:
+            regions = self.resize_to_original(regions, rescale_factor)
+            if self.settings.debug:
+                plt.imshow(_image)
+                for polygon in regions:
+                    x, y = polygon.exterior.xy
+                    plt.plot(x, y)
+                plt.show()
+        else:
+            if self.settings.debug:
+                plt.imshow(cleansed_image)
+                for polygon in regions:
+                    x, y = polygon.exterior.xy
+                    plt.plot(x, y)
+                plt.show()
+
+        from ocr4all_segmentation.segmentation.post_processing import RegionClassifier, RegionClassifierSettings
+
+        r_settings = RegionClassifierSettings()
+        r_classifier = RegionClassifier(r_settings)
+
+        classification = r_classifier.classify(_image, regions)
+
+        return regions, classification
+
+    def resize_to_original(self, regions, factor):
+        new_regions = [scale(region, factor, factor, origin=(0, 0, 0)) for region in regions]
+        return new_regions
 
     def find_cut_points(self, count: List[int], image, addstartend=True):
         lines = []
@@ -146,6 +191,7 @@ class Segmentator:
         multiplikator = 0.95 if base_height / image_height < 0.85 else 0.99
         peaks, keys = find_peaks(count, height=max(image_height - abs(base_height - multiplikator * image_height),
                                                    image_height * multiplikator))
+
         if peaks.size != 0:
             peaks = np.concatenate(([indexes[0][0]], peaks, [indexes[0][-1]]))
         else:
@@ -180,16 +226,12 @@ def calculate_sub_image(path, image):
     mbpath = Path(np.asarray(path))
     extents = mbpath.get_extents()
     image_slice = image_cp[int(extents.ymin):int(extents.ymax), int(extents.xmin): int(extents.xmax)]
-    f, ax = plt.subplots(1,2)
+    f, ax = plt.subplots(1, 2)
     ax[0].imshow(image_slice)
     ax[1].imshow(image_cp)
     plt.show()
 
     return image_cp[int(extents.ymin):int(extents.ymax), int(extents.xmin): int(extents.xmax)]
-
-
-def cut_image_by_lines(image, path):
-    pass
 
 
 def get_bp_distribution(image: np.array, axis=0):
@@ -251,12 +293,31 @@ def get_local_minima(list, peak_ind, threshold = 0.3, step=1):
     return global_minimum_ind
 
 
+def preprocess(image, av_cc_height, max_contur_ratio, debug=False):
+    contours, hierarchy = cv2.findContours(image.astype(np.uint8), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+
+    mask = np.zeros(image.shape, np.uint8)
+    largest_areas = sorted(contours, key=cv2.contourArea)
+    reverse = largest_areas[::-1]
+    for contour in reverse[1:]:
+        x, y, w, h = cv2.boundingRect(contour)
+        if h >= max_contur_ratio * av_cc_height:
+            cv2.drawContours(mask, [contour], 0, (255, 255, 255, 255), -1)
+        else:
+            break
+    image[mask == 255] = 1
+    if debug:
+        plt.imshow(image)
+        plt.show()
+    return image
+
+
 if __name__ == '__main__':
     import pickle
     import os
     from matplotlib import pyplot as plt
     project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    page_path = os.path.join(project_dir, 'ocr4all_segmentation/demo/006.bin.png')
+    page_path = os.path.join(project_dir, 'ocr4all_segmentation/demo/00107400.png')
     _page_content_model = os.path.join(project_dir, 'subprojects/page_content/pagecontent/demo/model/model')
     _settings = SegmentationSettings(debug=True)
     _segmentator = Segmentator(_settings)

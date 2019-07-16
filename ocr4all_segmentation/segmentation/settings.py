@@ -11,19 +11,31 @@ class SegmentationSettings(NamedTuple):
 
     line_window: int = 5  # window of the line points to best fit
 
-    # advanced parameters
+    # preprocessing parameters
     min_size_objects: int = 5
     min_image_height: int = 100
     min_cc_factor_size: float = 5.0
     min_window_width: int = 3.0
+    remove_big_contours: bool = True
+    big_contour_height_ratio = 10
 
+    # page content model settings
     page_content_model: Optional[str] = None  # path to page content model
     page_content_debug: bool = False
     page_content_model_debug: bool = False
 
-    # not yet implemented
-    max_contour_size_ratio: float = 20   # cc with area of x times avg_cc_area are removed
-
-    # not yet implemented
+    # postprocessing parameter
     validate_vertical_lines: bool = True
-    validate_vertical_lines_width: int = 5
+    validate_vertical_lines_width: int = 3
+    validate_vertical_line_blakness: float = 0.995
+
+    resize_regions_to_original_size: bool = True
+
+
+class RegionClassifierSettings(NamedTuple):
+
+    debug: bool = True
+    model: Optional[str] = None
+    target_line_space_height: int = 6
+    line_space_height: int = 0
+    processes: int = 8
