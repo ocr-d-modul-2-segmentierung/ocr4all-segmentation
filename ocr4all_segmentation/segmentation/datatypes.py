@@ -85,6 +85,20 @@ class segment:
     def getbbox(self):
         rows = np.any(1 - self.sub_image * 1, axis=1)
         cols = np.any(1 - self.sub_image * 1, axis=0)
-        ymin, ymax = np.where(rows)[0][[0, -1]]
-        xmin, xmax = np.where(cols)[0][[0, -1]]
+        y_val = np.where(rows)
+        x_val = np.where(cols)
+        yminmax = tuple(y_val[0][[0, -1]]) if y_val[0].size > 0 else (1, 1)
+        xminmax = tuple(x_val[0][[0, -1]]) if x_val[0].size > 0 else (1, 1)
+        ymin, ymax = yminmax[0], yminmax[1]
+        xmin, xmax = xminmax[0], xminmax[1]
         return (ymin, ymax + 1), (xmin, xmax + 1)
+
+
+@dataclass
+class ImageData:
+    path: str = None
+    height: int = None
+    image: np.array = None
+    average_letter_height: int = None
+    binary_image: np.array = None
+    pixel_classifier_prediction: np.array = None

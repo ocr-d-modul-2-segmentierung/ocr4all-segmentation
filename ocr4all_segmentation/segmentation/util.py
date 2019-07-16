@@ -85,7 +85,8 @@ def compute_avg_cc_height(image: np.array):
     # labeled, nr_objects = ndimage.label(img > 128)
     num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats((np.invert(image)*255).astype(np.uint8), 4)
     heights = [stats[i, cv2.CC_STAT_HEIGHT] for i in range(1, len(stats))]
-    return np.mean(heights)
+    heights.sort()
+    return np.mean(heights), np.median(heights)
 
 
 def compute_char_height(image: np.array):
@@ -205,7 +206,7 @@ def best_line_fit(img: np.array, line: Line, line_thickness: int = 3, max_iterat
     return best_line
 
 
-def get_blackness_of_vertical_line(line: Line, image: np.ndarray, window=1, vote=False) -> int:
+def get_blackness_of_vertical_line(line: Line, image: np.ndarray, window=1, vote=False, debug = True) -> int:
 
     image = image * 1.0
     x_list, y_list = line.get_xy()
@@ -220,11 +221,19 @@ def get_blackness_of_vertical_line(line: Line, image: np.ndarray, window=1, vote
     index_x = np.empty(0, dtype=np.uint8)
 
     window_cp = 0
-    while window_cp != window:
+    while window_cp <= window:
 
         if window_cp == 0:
             index_y = np.concatenate((index_y, y_list_new))
             index_x = np.concatenate((index_x, x_new_int))
+            if vote is True and debug is True:
+                'debug blackness of line'
+                indexes = (index_y, index_x)
+                #blackness = np.mean(image[indexes])
+                print(np.mean(image[indexes]))
+                plt.imshow(image)
+                plt.plot(index_x, index_y)
+                plt.show()
         else:
             if np.max(index_x + window_cp) < image.shape[1]:
                 index_y = np.concatenate((index_y, y_list_new))
@@ -232,24 +241,34 @@ def get_blackness_of_vertical_line(line: Line, image: np.ndarray, window=1, vote
             if np.min(index_x - window_cp) >= 0:
                 index_y = np.concatenate((index_y, y_list_new))
                 index_x = np.concatenate((index_x, x_new_int - window_cp))
-            if vote is True:
+            if vote is True and debug is True:
+                plt.imshow(image)
+                plt.plot(x_new_int + window_cp, y_list_new)
+                plt.show()
                 plt.imshow(image)
                 plt.plot(x_new_int - window_cp, y_list_new)
                 plt.show()
+                pass
         window_cp = window_cp + 1
 
     blackness = 0
-    if vote and window > 0:
+    blackness_loc = 0
+    if vote:
         for x in range(0, max(window + 1, 5)):
             if np.max(index_x + x) < image.shape[1]:
                 indexes = (index_y, index_x + x)
-                blackness = np.mean(image[indexes])
+                blackness_loc = np.mean(image[indexes])
+                #print(blackness_loc)
+                if blackness_loc > blackness:
+                    blackness = blackness_loc
 
                 if blackness == 1:
                     return blackness
             if np.min(index_x - x) >= 0:
                 indexes = (index_y, index_x - x)
-                blackness = np.mean(image[indexes])
+                blackness_loc = np.mean(image[indexes])
+                if blackness_loc > blackness:
+                    blackness = blackness_loc
 
                 if blackness == 1:
                     return blackness
