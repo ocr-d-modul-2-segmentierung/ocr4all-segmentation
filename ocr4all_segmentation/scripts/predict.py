@@ -57,5 +57,6 @@ def main():
             xml_creator.create_page_xml(classification=classification, regions=regions, image=np.ones((2, 2)),
                                         output_dir=args.output, image_name=os.path.basename(i))
 
+
 if __name__ == "__main__":
     main()

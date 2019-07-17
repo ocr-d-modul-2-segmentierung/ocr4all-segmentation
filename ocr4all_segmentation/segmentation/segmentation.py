@@ -20,6 +20,8 @@ from definitions import default_content_model
 from matplotlib.path import Path
 from shapely import geometry
 from shapely.affinity import scale
+from shapely.geometry import Polygon
+from skimage.draw import polygon
 
 
 class Segmentator:
@@ -37,9 +39,9 @@ class Segmentator:
 
     def segmentate_image_path(self, path):
         _image = np.array(Image.open(path))
-        bounding_box_path = list(self.page_predictor.detect([_image]))[0]
-        if bounding_box_path is not None:
-            mask = generate_content_mask(np.array(bounding_box_path), _image.shape)
+        content_polygon = list(self.page_predictor.detect([_image]))[0]
+        if content_polygon is not None:
+            mask = draw_polygons([content_polygon], _image.shape)
             _image[mask < 1] = 255
         _rescaled_image, rescale_factor = ImageRescaler().rescale(_image)
         _np_image = _rescaled_image.astype(np.bool)
@@ -130,7 +132,7 @@ class Segmentator:
                     listline2 = list(zip(*line2.get_xy(x_offset=bbox[1][0], y_offset=bbox[0][0] + image.path[0])))
                     path = listline1 + listline2[::-1]
 
-                    # Todo optimize, just a hack to test
+                    # Todo optimize
                     cleansed_image_cp = cleansed_image.copy()
                     mask = generate_content_mask(path, cleansed_image.shape)
                     cleansed_image_cp[mask < 1] = 255
@@ -310,6 +312,15 @@ def preprocess(image, av_cc_height, max_contur_ratio, debug=False):
         plt.imshow(image)
         plt.show()
     return image
+
+
+def draw_polygons(_polygons: List[Polygon], image_shape):
+    mask = np.zeros(image_shape)
+    for _poly in _polygons:
+        x, y = _poly.exterior.xy
+        rr, cc = polygon(y, x)
+        mask[cc, rr] = 1
+    return mask
 
 
 if __name__ == '__main__':
