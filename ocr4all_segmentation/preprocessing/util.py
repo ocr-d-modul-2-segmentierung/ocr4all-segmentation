@@ -4,6 +4,7 @@ import numpy as np
 from skimage.morphology import remove_small_holes
 from shapely.geometry import Polygon
 
+
 class ImageRescaler():
 
     def __init__(self, max_width=800, threshold=0.1):
@@ -14,15 +15,14 @@ class ImageRescaler():
         o_height, o_width = binary_image.shape
         factor = o_width / self.max_width
         height = int(o_height / factor)
-        #image = 1 - binary_image
 
         image_resized = resize(binary_image / 255, (height, self.max_width), preserve_range=True, anti_aliasing=False,
-                               order=0) #> self.threshold
+                               order=0)
 
         return image_resized, factor
 
     def remove_small_objects(self, binary_image: np.array, min_size=10):
-        return remove_small_holes(binary_image, min_size = min_size)
+        return remove_small_holes(binary_image, min_size=min_size)
 
 
 class PolygonRescaler(Polygon):
