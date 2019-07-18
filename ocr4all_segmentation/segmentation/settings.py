@@ -33,9 +33,9 @@ class SegmentationSettings(NamedTuple):
 
     fit_line = False
 
-class RegionClassifierSettings(NamedTuple):
 
-    debug: bool = True
+class RegionClassifierSettings(NamedTuple):
+    debug: bool = False
     model: Optional[str] = None
     target_line_space_height: int = 6
     line_space_height: int = 0

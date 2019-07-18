@@ -1,7 +1,6 @@
 from ocr4all_segmentation.segmentation.util import recursive_xy_cut, rlsa, compute_char_height,\
     compute_line_space_height, vertical_runs, generate_vertical_line, best_line_fit, prune_neighbor_lines, \
     compute_avg_cc_height, validate_line, get_blackness_of_vertical_line
-from matplotlib.path import Path
 import numpy as np
 from typing import List
 from scipy.signal import find_peaks
@@ -9,7 +8,6 @@ from ocr4all_segmentation.segmentation.settings import SegmentationSettings
 from ocr4all_segmentation.segmentation.datatypes import Point, Line
 from ocr4all_segmentation.preprocessing.util import ImageRescaler
 from PIL import Image
-from matplotlib import pyplot as plt
 from subprojects.page_content.pagecontent.detection.detection import PageContentDetection
 from subprojects.page_content.pagecontent.detection.settings import PageContentSettings
 import cv2
@@ -324,7 +322,7 @@ if __name__ == '__main__':
     import os
     from matplotlib import pyplot as plt
     project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    page_path = os.path.join(project_dir, 'ocr4all_segmentation/demo/00107400.png')
+    page_path = os.path.join(project_dir, 'ocr4all_segmentation/demo/104.png')
     _page_content_model = os.path.join(project_dir, 'subprojects/page_content/pagecontent/demo/model/model')
     _settings = SegmentationSettings(debug=True)
     _segmentator = Segmentator(_settings)
