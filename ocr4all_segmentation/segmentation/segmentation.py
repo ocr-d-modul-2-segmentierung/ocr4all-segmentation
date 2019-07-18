@@ -22,6 +22,7 @@ from shapely import geometry
 from shapely.affinity import scale
 from shapely.geometry import Polygon
 from skimage.draw import polygon
+from ocr4all_segmentation.segmentation.post_processing import RegionClassifier, RegionClassifierSettings
 
 
 class Segmentator:
@@ -36,6 +37,8 @@ class Segmentator:
                 debug_model=self.settings.page_content_model_debug,
             )
             self.page_predictor = PageContentDetection(settings_border_predictor)
+            self.r_settings = RegionClassifierSettings()
+            self.r_classifier = RegionClassifier(self.r_settings)
 
     def segmentate_image_path(self, path):
         _image = np.array(Image.open(path))
@@ -80,12 +83,11 @@ class Segmentator:
         sub_images_horizontal = generate_sub_images(cleansed_image, y_cuts)
 
         regions = []
+
         for image in sub_images_horizontal:
             bbox = image.getbbox()
             avg_cc_height, median_cc_height = compute_avg_cc_height(image.sub_image)
             bbox_height = bbox[0][1] - bbox[0][0]
-            print('boxheight {} avg_cc_height {} median_cc_height {}'.format(bbox_height, avg_cc_height,
-                                                                             median_cc_height))
             _x = get_bp_distribution(image.sub_image[bbox[0][0]:bbox[0][1], bbox[1][0]: bbox[1][1]], 0)
             x_cuts = self.find_cut_points(_x, image.sub_image[bbox[0][0]:bbox[0][1], bbox[1][0]: bbox[1][1]])
             if self.settings.validate_vertical_lines and x_cuts :
@@ -123,7 +125,6 @@ class Segmentator:
                             new_x_cuts.append(x)
 
                 x_cuts = new_x_cuts
-
             if x_cuts:
                 for l1, l2 in pairwise(x_cuts):
                     line1 = l1
@@ -132,7 +133,6 @@ class Segmentator:
                     listline2 = list(zip(*line2.get_xy(x_offset=bbox[1][0], y_offset=bbox[0][0] + image.path[0])))
                     path = listline1 + listline2[::-1]
 
-                    # Todo optimize
                     cleansed_image_cp = cleansed_image.copy()
                     mask = generate_content_mask(path, cleansed_image.shape)
                     cleansed_image_cp[mask < 1] = 255
@@ -170,13 +170,7 @@ class Segmentator:
                     plt.plot(x, y)
                 plt.show()
 
-        from ocr4all_segmentation.segmentation.post_processing import RegionClassifier, RegionClassifierSettings
-
-        r_settings = RegionClassifierSettings()
-        r_classifier = RegionClassifier(r_settings)
-
-        classification = r_classifier.classify(_image, regions)
-
+        classification = self.r_classifier.classify([_image], regions)
         return regions, classification
 
     def resize_to_original(self, regions, factor):
@@ -205,9 +199,11 @@ class Segmentator:
             vertical_line_ypos = xl if count[xl] > count[xr] else xr
             vertical_line_ypos = vertical_line_ypos if count[vertical_line_ypos] > count[int(np.mean(base))] else int(
                 np.mean(base))
-            line = generate_vertical_line(vertical_line_ypos,
-                                          image=image, anchor_points=self.settings.anchor_points_distance)
-            new_line = best_line_fit(1 - (image / 255), line, line_thickness=self.settings.line_window)
+            new_line = generate_vertical_line(vertical_line_ypos,
+                                              image=image, anchor_points=self.settings.anchor_points_distance)
+            if self.settings.fit_line:
+                new_line = best_line_fit(1 - (image / 255), new_line, line_thickness=self.settings.line_window)
+
             lines.append(new_line)
         if addstartend:
             lines.insert(0, Line([Point(x=0, y=0), Point(x=0, y=image.shape[0])]))

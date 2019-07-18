@@ -15,10 +15,10 @@ import numpy as np
 # ignoreBottomTop = Segmentation of top and bottom of Image
 # axis = 0 (for vertical-lines) or 1 (for horizontal-lines)
 # Returns a gray image, PIL Image.
-def recursive_xy_cut(image_arr, plateau_size = 3, ignoreBottomTop = False, axis = 1):
+def recursive_xy_cut(image_arr, plateau_size=3, ignoreBottomTop = False, axis = 1):
     # Sum the pixels along given
     image_arr_inv = image_arr
-    sum_vals = image_arr_inv.sum(axis = axis)
+    sum_vals = image_arr_inv.sum(axis=axis)
     # Get the indices of the peaks
 
     peaks, _ = find_peaks(sum_vals, plateau_size=plateau_size, height= 0.95 * image_arr.shape[axis])
@@ -31,8 +31,7 @@ def recursive_xy_cut(image_arr, plateau_size = 3, ignoreBottomTop = False, axis 
             temp[range(peak-1, peak+1)] = 0
         else:
             temp[:, range(peak-2, peak+2)] = 0
-    #plt.imshow(np.uint8(image_arr * temp))
-    #plt.show()
+
     return peaks
 
 
@@ -206,7 +205,7 @@ def best_line_fit(img: np.array, line: Line, line_thickness: int = 3, max_iterat
     return best_line
 
 
-def get_blackness_of_vertical_line(line: Line, image: np.ndarray, window=1, vote=False, debug = True) -> int:
+def get_blackness_of_vertical_line(line: Line, image: np.ndarray, window=1, vote=False, debug=True) -> int:
 
     image = image * 1.0
     x_list, y_list = line.get_xy()
@@ -229,8 +228,6 @@ def get_blackness_of_vertical_line(line: Line, image: np.ndarray, window=1, vote
             if vote is True and debug is True:
                 'debug blackness of line'
                 indexes = (index_y, index_x)
-                #blackness = np.mean(image[indexes])
-                print(np.mean(image[indexes]))
                 plt.imshow(image)
                 plt.plot(index_x, index_y)
                 plt.show()
@@ -258,7 +255,6 @@ def get_blackness_of_vertical_line(line: Line, image: np.ndarray, window=1, vote
             if np.max(index_x + x) < image.shape[1]:
                 indexes = (index_y, index_x + x)
                 blackness_loc = np.mean(image[indexes])
-                #print(blackness_loc)
                 if blackness_loc > blackness:
                     blackness = blackness_loc
 
