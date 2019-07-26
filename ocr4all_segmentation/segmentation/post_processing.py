@@ -87,6 +87,8 @@ def create_data(image: np.ndarray, avg_letter_height: int) -> ImageData:
     binary_image = image.astype(np.uint8) / 255
     if avg_letter_height == 0:
         avg_letter_height = compute_char_height(image)
+        if avg_letter_height is None:
+            avg_letter_height = 10
         print(avg_letter_height)
     image_data = ImageData(image=binary_image, average_letter_height=avg_letter_height,
                            binary_image=binary_image)
@@ -94,7 +96,7 @@ def create_data(image: np.ndarray, avg_letter_height: int) -> ImageData:
 
 
 def generate_content_mask(path, image_shape):
-    mask = np.zeros(image_shape)
+    mask = np.zeros(image_shape, dtype=np.uint8)
     cv2.fillPoly(mask, [np.int32(path)], 255)
-    return mask / 255
+    return mask // 255
 
