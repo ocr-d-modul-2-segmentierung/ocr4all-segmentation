@@ -37,6 +37,8 @@ def main():
                         help="output directory for xml files")
     parser.add_argument("--debug", type=str2bool, default=False,
                         help="Display debug images")
+    parser.add_argument("--preprocess", type=str2bool, default=True,
+                        help="Use preprocessing to remove page border")
     args = parser.parse_args()
 
     bin_file_paths = sorted(glob_all(args.binary))
@@ -44,8 +46,7 @@ def main():
 
     settings = SegmentationSettings(
         debug=args.debug,
-
-
+        enable_preprocessing=args.preprocess,
     )
 
     xml_settings = XmlSettings()

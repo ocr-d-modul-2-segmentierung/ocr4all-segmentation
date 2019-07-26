@@ -12,6 +12,7 @@ class SegmentationSettings(NamedTuple):
     line_window: int = 5  # window of the line points to best fit
 
     # preprocessing parameters
+    enable_preprocessing: bool = False
     min_size_objects: int = 5
     min_image_height: int = 100
     min_cc_factor_size: float = 5.0
