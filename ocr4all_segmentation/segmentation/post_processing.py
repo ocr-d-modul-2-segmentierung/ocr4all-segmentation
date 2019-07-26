@@ -1,3 +1,5 @@
+from pagesegmentation.lib.dataset import label_to_colors
+
 from ocr4all_segmentation.segmentation.settings import  RegionClassifierSettings
 from matplotlib import pyplot as plt
 from definitions import default_classifier_model
@@ -28,7 +30,7 @@ class RegionClassifier:
             )
             self.predictor = PCPredictor(pcsettings, settings.target_line_space_height)
 
-    def classify(self, images, regions):
+    def classify(self, images, regions, paths):
         create_data_partial = partial(create_data, avg_letter_height=self.settings.line_space_height)
         if len(images) <= 1:
             data = list(map(create_data_partial, images))
@@ -39,14 +41,14 @@ class RegionClassifier:
             data[i].pixel_classifier_prediction = prob
             rounded = np.around(prob)
 
-            debug_image = np.zeros(data[i].image.shape)
+            debug_image = np.zeros(data[i].image.shape, dtype=np.uint8)
             classification = []
             for x in regions:
                 path = list(x.exterior.coords)
                 mask = generate_content_mask(path, data[i].image.shape)
                 max_class = vote_region_class(rounded, mask)
                 classification.append(max_class)
-                if self.settings.debug:
+                if self.settings.debug or self.settings.write_image:
                     debug_image = debug_image + mask * max_class
 
             if self.settings.debug:
@@ -55,6 +57,22 @@ class RegionClassifier:
                 ax[1].imshow(rounded)
                 ax[2].imshow(debug_image)
                 plt.show()
+            if self.settings.write_image:
+                colors = (
+                    ((0, 0, 0),       0),
+                    ((255, 255, 255), 1),
+                    ((255, 0,   0),   2),
+                    ((0,   255, 0),   3),
+                    ((0,   0,   255), 4),
+                )
+                debug_image[debug_image == 0] = 1
+                mask_out = label_to_colors(debug_image, colors)
+                image_out = label_to_colors(data[i].image, colors)
+                blend = cv2.addWeighted(image_out, 0.7, mask_out, 0.3, 0)
+                parts = paths[i].split(".")
+                base, ext = ".".join(parts[0:2]), parts[-1]
+                cv2.imwrite(base + ".blend." + ext, blend)
+
         return classification
 
 
