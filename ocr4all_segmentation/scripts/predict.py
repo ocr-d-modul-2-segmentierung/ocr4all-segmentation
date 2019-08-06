@@ -26,18 +26,18 @@ def str2bool(v):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Detects music lines in historical documents')
-    parser.add_argument("--binary", type=str, required=True, nargs="+",
+    parser = argparse.ArgumentParser(description='Detects page segments in historical documents')
+    parser.add_argument("--binary", "--image", type=str, required=True, nargs="+",
                         help="directory name of the binary images")
     parser.add_argument("--processes", type=int, default=8,
                         help="Number of processes to use")
     parser.add_argument("--xml", type=str2bool, default=False,
                         help="Create Xml files")
-    parser.add_argument("--output", type=str, required=False, default='',
+    parser.add_argument("--output", type=str, required=False, default='.',
                         help="output directory for xml files")
     parser.add_argument("--debug", type=str2bool, default=False,
                         help="Display debug images")
-    parser.add_argument("--preprocess", type=str2bool, default=True,
+    parser.add_argument("--preprocess", type=str2bool, default=False,
                         help="Use preprocessing to remove page border")
     args = parser.parse_args()
 

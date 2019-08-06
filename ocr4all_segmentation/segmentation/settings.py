@@ -32,7 +32,7 @@ class SegmentationSettings(NamedTuple):
 
     resize_regions_to_original_size: bool = True
 
-    fit_line = False
+    fit_line = True
 
 
 class RegionClassifierSettings(NamedTuple):
