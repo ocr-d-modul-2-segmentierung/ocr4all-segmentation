@@ -41,4 +41,4 @@ class RegionClassifierSettings(NamedTuple):
     target_line_space_height: int = 6
     line_space_height: int = 0
     processes: int = 8
-    write_image: bool = True
+    write_image: bool = False

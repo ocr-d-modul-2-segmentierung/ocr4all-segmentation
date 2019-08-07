@@ -41,6 +41,9 @@ class Segmentator:
 
     def segmentate_image_path(self, image_path):
         _image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+        return self.segmentate_image(_image, image_path)
+
+    def segmentate_image(self, _image, original_path=None):
         _rescaled_image, rescale_factor = ImageRescaler().rescale(_image)
         _np_image = _rescaled_image.astype(np.bool)
         avg_cc_height, median_cc_height = compute_avg_cc_height(_np_image)

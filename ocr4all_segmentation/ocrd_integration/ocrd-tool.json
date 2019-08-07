@@ -1,0 +1,29 @@
+{
+  "version": "0.1.0",
+  "git_url": "https://github.com/ocrd-modul-2-segmentation/ocr4all-segmentation",
+  "tools": {
+    "ocrd-ocr4all-segmentation": {
+      "executable": "ocrd-ocr4all-segmentation",
+      "categories": ["Layout analysis"],
+      "description": "Segment regions into lines with tesseract",
+      "input_file_grp": [
+        "OCR-D-IMG-BIN"
+      ],
+      "output_file_grp": [
+        "OCR-D-SEG-BLOCK"
+      ],
+      "steps": ["layout/segmentation/region"],
+      "parameters": {
+        "overwrite_regions": {
+          "type": "boolean",
+          "default": true,
+          "description": "remove existing layout and text annotation below the Page level"
+        },
+        "model": {
+          "type": "string",
+          "description": "path to model for pixel classifier"
+        }
+      }
+    }
+  }
+}
