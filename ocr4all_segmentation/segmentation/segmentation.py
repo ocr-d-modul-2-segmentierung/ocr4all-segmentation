@@ -177,7 +177,7 @@ class Segmentator:
                     plt.plot(x, y)
                 plt.show()
 
-        classification = self.r_classifier.classify([_image], regions, [image_path])
+        classification = self.r_classifier.classify([_image], regions, [original_path])
         return regions, classification
 
     def resize_to_original(self, regions, factor):

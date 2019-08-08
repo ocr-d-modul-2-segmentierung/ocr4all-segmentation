@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import json
 import os.path
+import numpy as np
 
 from ocrd import Processor
 from ocrd_modelfactory import page_from_file
@@ -30,7 +31,7 @@ from .common import (
 OCRD_TOOL = json.loads(resource_string(__name__, 'ocrd-tool.json').decode('utf8'))
 
 TOOL = 'ocrd-ocr4all-segmentation'
-LOG = getLogger('processor.TesserocrBinarize')
+LOG = getLogger('processor.OCR4AllSegmentation')
 FALLBACK_IMAGE_GRP = 'OCR-D-SEG-BLOCK'
 
 
@@ -114,7 +115,7 @@ class OCR4AllSegmentation(Processor):
         # TODO: does this still need to be cropped or do we not need page_xywh?
         #       Same for points below
         #       page_image[page_xywh["x"]:page_xywh["w"], page_xywh["y"]:page_xywh["h"]]
-        regions, classification = Segmentator(settings).segmentate_image(page_image)
+        regions, classification = Segmentator(settings).segmentate_image(np.asarray(page_image))
 
         count = 0
         for region, prediction in zip(regions, classification):
