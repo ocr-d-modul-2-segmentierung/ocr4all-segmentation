@@ -13,7 +13,7 @@ def estimate_skew(flat, bignore=0.1, maxskew=2, skewsteps=8):
     ma = maxskew
     ms = int(2*maxskew*skewsteps)
     angle = estimate_skew_angle(est, np.linspace(-ma, ma, ms+1))
-    flat = interpolation.rotate(flat, angle, mode='constant', reshape=0)
+    flat = interpolation.rotate(flat, angle, mode='constant', reshape=False)
     flat = np.amax(flat)-flat
     return flat, angle
 

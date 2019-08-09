@@ -1,14 +1,13 @@
 # Important Imports
-import numpy as np
-from PIL import Image
-from scipy.signal import find_peaks
-import cv2
 from itertools import tee
-from ocr4all_segmentation.segmentation.datatypes import Point, Line
-from scipy.interpolate import interpolate
-from matplotlib import pyplot as plt
+
 import cv2
 import numpy as np
+from matplotlib import pyplot as plt
+from scipy.interpolate import interpolate
+from scipy.signal import find_peaks
+
+from ocr4all_segmentation.segmentation.datatypes import Point, Line
 
 
 # image = PIL.Image, n = Number of Segments
@@ -51,7 +50,7 @@ def iteration(image: np.ndarray, value: int) -> np.ndarray:
         count = start
         for col in range(start, cols):
             if image[row, col] == 0:
-                if (col - count) <= value and (col - count) > 0:
+                if value >= (col - count) > 0:
                     image[row, count:col] = 0
                 count = col
     return image

@@ -9,10 +9,10 @@ from shapely.affinity import scale
 from shapely.geometry import Polygon
 from skimage.draw import polygon
 from skimage.morphology import remove_small_objects
-from subprojects.page_content.pagecontent.detection.detection import PageContentDetection
-from subprojects.page_content.pagecontent.detection.settings import PageContentSettings
+from pagecontent.detection.detection import PageContentDetection
+from pagecontent.detection.settings import PageContentSettings
 
-from definitions import default_content_model
+from ocr4all_segmentation.definitions import default_content_model
 from ocr4all_segmentation.preprocessing.util import ImageRescaler
 from ocr4all_segmentation.segmentation.datatypes import Point, Line
 from ocr4all_segmentation.segmentation.datatypes import segment
@@ -180,7 +180,8 @@ class Segmentator:
         classification = self.r_classifier.classify([_image], regions, [original_path])
         return regions, classification
 
-    def resize_to_original(self, regions, factor):
+    @staticmethod
+    def resize_to_original(regions, factor):
         new_regions = [scale(region, factor, factor, origin=(0, 0, 0)) for region in regions]
         return new_regions
 

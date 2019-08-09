@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-'''Crop an image to just the portions containing text.
+"""Crop an image to just the portions containing text.
 Usage:
     ./crop_morphology.py path/to/image.jpg
 This will place the cropped image in path/to/image.crop.png.
@@ -7,20 +7,13 @@ For details on the methodology, see
 http://www.danvk.org/2015/01/07/finding-blocks-of-text-in-an-image-using-python-opencv-and-numpy.html
 # https://github.com/danvk/oldnyc/blob/master/ocr/tess/crop_morphology.py
 
-'''
+"""
 
-import glob
 import os
-import random
-import sys
-import random
-import math
-import json
-from collections import defaultdict
 
 import cv2
-from PIL import Image, ImageDraw
 import numpy as np
+from PIL import Image
 from scipy.ndimage.filters import rank_filter
 
 
@@ -162,10 +155,10 @@ def find_optimal_components_subset(contours, edges):
             if new_f1 > f1 or (
                     remaining_frac > 0.25 and new_area_frac < 0.15):
                 print(
-                '%d %s -> %s / %s (%s), %s -> %s / %s (%s), %s -> %s' % (
-                    i, covered_sum, new_sum, total, remaining_frac,
-                    crop_area(crop), crop_area(new_crop), area, new_area_frac,
-                    f1, new_f1))
+                    '%d %s -> %s / %s (%s), %s -> %s / %s (%s), %s -> %s' % (
+                        i, covered_sum, new_sum, total, remaining_frac,
+                        crop_area(crop), crop_area(new_crop), area, new_area_frac,
+                        f1, new_f1))
                 crop = new_crop
                 covered_sum = new_sum
                 del c_info[i]
@@ -239,7 +232,7 @@ def process_image(path, out_path):
     # TODO: dilate image _before_ finding a border. This is crazy sensitive!
     contours, hierarchy = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     borders = find_border_components(contours, edges)
-    borders.sort(key=lambda xy: (xy[3] - xy[1]) * (xy[4]- xy[2]))#  (i, x1, y1, x2, y2): (x2 - x1) * (y2 - y1))
+    borders.sort(key=lambda xy: (xy[3] - xy[1]) * (xy[4] - xy[2]))  # (i, x1, y1, x2, y2): (x2 - x1) * (y2 - y1))
 
     border_contour = None
     if len(borders):
@@ -259,8 +252,7 @@ def process_image(path, out_path):
 
     contours = find_components(edges)
     if len(contours) == 0:
-        print
-        '%s -> (no text!)' % path
+        print('%s -> (no text!)' % path)
         return
 
     crop = find_optimal_components_subset(contours, edges)
@@ -281,8 +273,7 @@ def process_image(path, out_path):
     # im.show()
     text_im = orig_im.crop(crop)
     text_im.save(out_path)
-    print
-    '%s -> %s' % (path, out_path)
+    print('%s -> %s' % (path, out_path))
 
 
 if __name__ == '__main__':
@@ -302,6 +293,7 @@ if __name__ == '__main__':
             print('%s %s' % (path, e))
     '''
     from sys import path
+
     project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     page_path = os.path.join(project_dir, 'demo/00017476.png')
     out_path = page_path.replace('.png', '.crop.png')

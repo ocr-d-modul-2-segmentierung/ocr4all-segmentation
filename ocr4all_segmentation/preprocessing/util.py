@@ -1,8 +1,7 @@
-from skimage.transform import rotate, resize
-from typing import NamedTuple
 import numpy as np
-from skimage.morphology import remove_small_holes
 from shapely.geometry import Polygon
+from skimage.morphology import remove_small_holes
+from skimage.transform import resize
 
 
 class ImageRescaler():

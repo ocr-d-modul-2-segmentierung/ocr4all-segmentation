@@ -1,3 +1,0 @@
-[submodule "page-content"]
-	path = subprojects/page_content
-	url = git@github.com:ocr-d-modul-2-segmentierung/ocr4all-page-content

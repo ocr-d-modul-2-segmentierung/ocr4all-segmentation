@@ -2,7 +2,7 @@ from pagesegmentation.lib.dataset import label_to_colors
 
 from ocr4all_segmentation.segmentation.settings import  RegionClassifierSettings
 from matplotlib import pyplot as plt
-from definitions import default_classifier_model
+from ocr4all_segmentation.definitions import default_classifier_model
 import os
 from pagesegmentation.lib.predictor import PredictSettings
 from ocr4all_segmentation.pixelclassifier.predictor import PCPredictor

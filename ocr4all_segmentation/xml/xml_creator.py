@@ -1,11 +1,7 @@
-import cv2
-import numpy as np
-import re
-import os
-import sys
-import shapely
 import datetime
+import os
 import xml.etree.ElementTree as ET
+
 from .settings import XmlSettings
 
 

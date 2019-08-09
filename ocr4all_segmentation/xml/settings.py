@@ -1,5 +1,5 @@
-from enum import IntEnum
-from typing import NamedTuple, Optional
+from typing import NamedTuple
+
 
 class XmlSettings(NamedTuple):
     author: str = 'TestUser'

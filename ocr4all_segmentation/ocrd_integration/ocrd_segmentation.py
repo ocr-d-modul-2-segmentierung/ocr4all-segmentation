@@ -110,7 +110,8 @@ class OCR4AllSegmentation(Processor):
                                             file_id + '.xml'),
                 content=to_xml(pcgts))
 
-    def _process_page(self, page, page_image, page_xywh, pageId, file_id):
+    @staticmethod
+    def _process_page(page, page_image, page_xywh, pageId, file_id):
         settings = SegmentationSettings(debug=False, enable_preprocessing=False)
         # TODO: does this still need to be cropped or do we not need page_xywh?
         #       Same for points below

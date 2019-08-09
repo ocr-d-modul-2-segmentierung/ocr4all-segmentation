@@ -1,10 +1,12 @@
-from pagesegmentation.lib.predictor import Predictor, PredictSettings
-from pagesegmentation.lib.dataset import DatasetLoader, SingleData
-from ocr4all_segmentation.segmentation.datatypes import ImageData
-import numpy as np
 from typing import Generator, List
+
+import numpy as np
+from pagesegmentation.lib.dataset import DatasetLoader, SingleData
+from pagesegmentation.lib.predictor import Predictor, PredictSettings
 from skimage.transform import resize
-from matplotlib import pyplot as plt
+
+from ocr4all_segmentation.segmentation.datatypes import ImageData
+
 
 class PCPredictor:
     def __init__(self, settings: PredictSettings, height=20):
