@@ -1,3 +1,4 @@
+from importlib.util import find_spec
 from typing import List
 
 import cv2
@@ -9,8 +10,6 @@ from shapely.affinity import scale
 from shapely.geometry import Polygon
 from skimage.draw import polygon
 from skimage.morphology import remove_small_objects
-from pagecontent.detection.detection import PageContentDetection
-from pagecontent.detection.settings import PageContentSettings
 
 from ocr4all_segmentation.definitions import default_content_model
 from ocr4all_segmentation.preprocessing.util import ImageRescaler
@@ -30,12 +29,18 @@ class Segmentator:
         self.page_predictor = None
         model_path = self.settings.page_content_model if self.settings.page_content_model else default_content_model
         if model_path:
-            settings_border_predictor = PageContentSettings(
-                model=model_path,
-                debug=self.settings.page_content_debug,
-                debug_model=self.settings.page_content_model_debug,
-            )
-            self.page_predictor = PageContentDetection(settings_border_predictor)
+            if self.settings.enable_preprocessing:
+                if find_spec("pagecontent") is None:
+                    raise Exception("preprocessring requires optional dependency ocr4all-page-content-detection")
+                from pagecontent.detection.settings import PageContentSettings
+                from pagecontent.detection.detection import PageContentDetection
+                settings_border_predictor = PageContentSettings(
+                    model=model_path,
+                    debug=self.settings.page_content_debug,
+                    debug_model=self.settings.page_content_model_debug,
+                )
+                self.page_predictor = PageContentDetection(settings_border_predictor)
+
             self.r_settings = RegionClassifierSettings()
             self.r_classifier = RegionClassifier(self.r_settings)
 

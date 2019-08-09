@@ -9,4 +9,4 @@ pillow
 matplotlib
 shapely
 ocrd>=1.0.0b11
-ocr4all-page-content-detection
+ocr4all-page-content-detection[preprocessing]
